@@ -2,8 +2,8 @@ import os, random, datetime
 import numpy as np, pandas as pd
 import gymnasium as gym
 from gymnasium import spaces
-from stable_baselines3.common.vec_env import DummyVecEnv
 from dash_writer import WRITER
+
 
 class ForexPriceTrailingEnv(gym.Env):
     """
@@ -86,7 +86,7 @@ class ForexPriceTrailingEnv(gym.Env):
         return self._window_obs(self.ptr), {
             "forex_pair": self.df[self.tic_col].iloc[0] if self.df is not None else None
         }
-    
+
     def set_fixed_window(self, start_idx: int, length: int):
         self.start_idx = start_idx
         self.ptr = start_idx
@@ -121,15 +121,20 @@ class ForexPriceTrailingEnv(gym.Env):
         lower = close * (1 - self.M)
 
         WRITER.add_scalars(
-            f"Live Agent Performance", 
-            tag_scalar_dict={"upper": upper, "close": close, "lower": lower, "agent": self.agent_price}, 
-            global_step=self.total_steps
+            f"Live Agent Performance",
+            tag_scalar_dict={
+                "upper": upper,
+                "close": close,
+                "lower": lower,
+                "agent": self.agent_price,
+            },
+            global_step=self.total_steps,
         )
 
         WRITER.add_scalars(
-            f"{self.tb_run_name}/live_performance", 
-            tag_scalar_dict={"upper": upper, "lower": lower, "agent": self.agent_price}, 
-            global_step=self.total_steps
+            f"{self.tb_run_name}/live_performance",
+            tag_scalar_dict={"upper": upper, "lower": lower, "agent": self.agent_price},
+            global_step=self.total_steps,
         )
 
         # pnl + fee
@@ -141,13 +146,11 @@ class ForexPriceTrailingEnv(gym.Env):
         WRITER.add_scalar(
             f"{self.tb_run_name}/cumulative_pnl",
             self.cum_pnl,
-            global_step=self.total_steps
+            global_step=self.total_steps,
         )
 
         WRITER.add_scalar(
-            f"Live Cumulative PnL",
-            self.cum_pnl,
-            global_step=self.total_steps
+            f"Live Cumulative PnL", self.cum_pnl, global_step=self.total_steps
         )
 
         self.total_steps += 1
@@ -186,8 +189,3 @@ class ForexPriceTrailingEnv(gym.Env):
 
     def save_action_memory(self):
         return pd.DataFrame({"date": self._hist_dates, "action": self.actions_memory})
-
-    def get_sb_env(self):
-        e = DummyVecEnv([lambda: self])
-        obs, _ = e.reset()
-        return e, obs
