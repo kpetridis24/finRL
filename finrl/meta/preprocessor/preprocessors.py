@@ -156,10 +156,11 @@ class FeatureEngineer:
             df = self.add_vix(df)
             print("Successfully added vix")
 
+        # TODO: add_turbulence has bugs. Fix before using
         # add turbulence index for multiple stock
-        if self.use_turbulence:
-            df = self.add_turbulence(df)
-            print("Successfully added turbulence index")
+        # if self.use_turbulence:
+        #     df = self.add_turbulence(df)
+        #     print("Successfully added turbulence index")
 
         # add user defined feature
         if self.user_defined_feature:
@@ -263,6 +264,7 @@ class FeatureEngineer:
         vix = df_vix[["date", "close"]]
         vix.columns = ["date", "vix"]
 
+        vix['date'] = pd.to_datetime(vix.date)
         df = df.merge(vix, on="date")
         df = df.sort_values(["date", "tic"]).reset_index(drop=True)
         return df

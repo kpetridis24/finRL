@@ -173,7 +173,7 @@ class YahooFinanceProcessor:
                 print(f"Error fetching data for {stock_name}: {e}")
 
         combined_df = pd.concat(all_dataframes, ignore_index=True)
-        combined_df = combined_df.sort_values(by=["day", "tick"]).reset_index(drop=True)
+        combined_df = combined_df.sort_values(by=["day", "tic"]).reset_index(drop=True)
 
         return combined_df
 
@@ -500,13 +500,15 @@ class YahooFinanceProcessor:
         df = df.copy()
         unique_ticker = df.tic.unique()
         if_first_time = True
+        turbulence_array = None
+
         for tic in unique_ticker:
             if if_first_time:
                 price_array = df[df.tic == tic][["close"]].values
                 tech_array = df[df.tic == tic][tech_indicator_list].values
                 if if_vix:
                     turbulence_array = df[df.tic == tic]["VIXY"].values
-                else:
+                elif 'turbulence' in df.columns:
                     turbulence_array = df[df.tic == tic]["turbulence"].values
                 if_first_time = False
             else:

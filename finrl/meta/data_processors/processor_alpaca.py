@@ -74,13 +74,11 @@ class AlpacaProcessor:
                 for ticker in ticker_list
             ]
         for future in futures:
-
             bars = future.result()
             # fix start
             # Reorganize the dataframes to be in original alpaca_trade_api structure
             # Rename the existing 'symbol' column if it exists
             if not bars.empty:
-
                 # Now reset the index
                 bars.reset_index(inplace=True)
 

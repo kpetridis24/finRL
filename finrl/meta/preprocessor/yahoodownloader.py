@@ -28,10 +28,13 @@ class YahooDownloader:
 
     """
 
-    def __init__(self, start_date: str, end_date: str, ticker_list: list):
+    def __init__(
+        self, start_date: str, end_date: str, ticker_list: list, interval: str = '1d'
+    ):
         self.start_date = start_date
         self.end_date = end_date
         self.ticker_list = ticker_list
+        self.interval = interval
 
     def fetch_data(self, proxy=None, auto_adjust=False) -> pd.DataFrame:
         """Fetches data from Yahoo API
@@ -54,6 +57,7 @@ class YahooDownloader:
                 end=self.end_date,
                 proxy=proxy,
                 auto_adjust=auto_adjust,
+                interval=self.interval,
             )
             if temp_df.columns.nlevels != 1:
                 temp_df.columns = temp_df.columns.droplevel(1)

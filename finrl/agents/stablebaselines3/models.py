@@ -56,6 +56,8 @@ class TensorboardCallback(BaseCallback):
 
     def _on_rollout_end(self) -> bool:
         try:
+            import statistics
+
             rollout_buffer_rewards = self.locals["rollout_buffer"].rewards.flatten()
             self.logger.record(
                 key="train/reward_min", value=min(rollout_buffer_rewards)

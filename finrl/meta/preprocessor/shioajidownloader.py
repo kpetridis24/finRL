@@ -9,7 +9,6 @@ import shioaji as sj
 
 
 class SinopacDownloader:
-
     def __init__(
         self,
         start_date: str,

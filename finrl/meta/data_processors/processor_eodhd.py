@@ -56,7 +56,6 @@ class EodhdProcessor:
             tickers.append("VIX")
 
         for ticker in tickers:
-
             all_ticker_data = []
             print(f"Fetching data for {ticker}...")
 
@@ -92,7 +91,6 @@ class EodhdProcessor:
 
             # Step 3: Save the data
             if all_ticker_data:
-
                 final_df = pd.concat(all_ticker_data)
                 final_df.to_csv(
                     self.csv_folder + "nasdaq_100_minute_data_" + ticker + ".csv",
@@ -164,12 +162,10 @@ class EodhdProcessor:
         return max_days
 
     def tics_in_more_than_90perc_days(self, max_days):
-
         sup_to_90 = 0
         tics_present_in_more_than_90_per = []
 
         for filename in os.listdir(self.csv_folder):
-
             print(f"self.csv_folder {self.csv_folder}")
             print(f"filename {filename}")
 
@@ -203,7 +199,6 @@ class EodhdProcessor:
         return tics_present_in_more_than_90_per
 
     def nber_present_tics_per_day(self, max_days, tics_in_more_than_90perc_days):
-
         dico_ints = {i: 0 for i in range(max_days + 1)}
         counter = 0
 
@@ -240,7 +235,6 @@ class EodhdProcessor:
         return dico_ints
 
     def process_after_dl(self):
-
         # add a day column
         max_days = self.add_day_column()
 
@@ -264,7 +258,6 @@ class EodhdProcessor:
         # loop over each tic CSV and remove non wished days
         df_list = []
         for filename in os.listdir(self.csv_folder):
-
             if filename.endswith(".csv"):
                 print(f"removed uncomplete days from {filename}")
                 file_path = os.path.join(self.csv_folder, filename)
@@ -291,7 +284,6 @@ class EodhdProcessor:
         return df
 
     def clean_data(self, df, min_24=True):
-
         df.rename(columns={"ticker": "tic"}, inplace=True)
         df.rename(columns={"datetime": "time"}, inplace=True)
         df["time"] = pd.to_datetime(df["time"])
@@ -318,11 +310,9 @@ class EodhdProcessor:
 
         # ADDING MISSING ROWS
         for tic in tics:
-
             print(f"Adding Missing Rows for tic {tic}")
 
             for day in days:
-
                 # 0) Create the sub df of the missing times
 
                 times_for_this_tic_and_day = df.loc[
@@ -395,7 +385,6 @@ class EodhdProcessor:
 
         ## FILLING THE MISSING ROWS
         for tic in tics:
-
             print(f"Filling Missing Rows for tic {tic}")
 
             cols_to_ffill = ["close", "open", "high", "low", "volume"]

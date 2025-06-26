@@ -1,0 +1,18 @@
+// .vscode/launch.json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Debug (Include Libraries)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",                // or whatever entry-point you want
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false,                 // ← allow stepping into non-user code
+      "subProcess": true,                  // ← debug into subprocesses too
+      "env": {},                           // any env overrides you need
+      "args": []                           // any CLI args you want to pass
+    },
+  ]
+}

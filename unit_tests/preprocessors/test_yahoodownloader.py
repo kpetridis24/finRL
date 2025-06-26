@@ -9,7 +9,6 @@ from finrl.meta.preprocessor.yahoodownloader import YahooDownloader
 
 
 class TestYahooDownloaderAdjustPrices(unittest.TestCase):
-
     def setUp(self):
         """Set up a dummy YahooDownloader instance and test data."""
         # These init params are not used by _adjust_prices but needed for instantiation

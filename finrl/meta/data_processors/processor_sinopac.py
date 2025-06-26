@@ -64,7 +64,6 @@ class SinopacProcessor:
         return tmp_df
 
     def clean_data(self, df):
-
         print("Data cleaning started")
         tic_list = df["tic"].unique()
         n_tickers = len(tic_list)

@@ -1,0 +1,12 @@
+{
+  "batch_size": 128,
+  "device": "cpu",
+  "episodes": 50,
+  "eps_decay": 10000,
+  "fc_hidden": 64,
+  "gamma": 0.9737968003757825,
+  "lr": 7.740191941595892e-05,
+  "lstm_hidden": 128,
+  "max_steps": 2000,
+  "target_update": 50
+}
