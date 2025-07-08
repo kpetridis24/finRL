@@ -2,8 +2,8 @@ import os, random, datetime
 import numpy as np, pandas as pd
 import gymnasium as gym
 from gymnasium import spaces
-from stable_baselines3.common.vec_env import DummyVecEnv
-from dash_writer import WRITER
+from torch.utils.tensorboard import SummaryWriter
+
 
 class ForexPriceTrailingEnv(gym.Env):
     """
@@ -25,13 +25,17 @@ class ForexPriceTrailingEnv(gym.Env):
         alpha_fee: float = 1.0,
         episode_len: int = 1000,
         pick_new_pair_every: int = 1,
+        writer: SummaryWriter | None = None,
+        name: str = "",
     ):
         # master data & tickers
+        self.name = name
         self.full_df = full_df
         self.tic_col = tic_col
         self.pair_list = list(full_df[tic_col].unique())
         self.pick_new_pair_every = pick_new_pair_every
         self._reset_calls = 0
+        self.writer = writer
 
         # params
         self.W, self.M, self.U = window, margin, step_frac
@@ -43,6 +47,10 @@ class ForexPriceTrailingEnv(gym.Env):
         )
         self.EP_LEN = episode_len
         self.action_space = spaces.Discrete(3)
+        obs_dim = window * 5 + 1
+        self.observation_space = spaces.Box(
+            low=-np.inf, high=np.inf, shape=(obs_dim,), dtype=np.float32
+        )
 
         # these get set in reset()
         self.df = None
@@ -57,7 +65,7 @@ class ForexPriceTrailingEnv(gym.Env):
 
     def _pick_new_pair(self):
         tic = random.choice(self.pair_list)
-        print(f"Picking new FX pair: {tic} (episode #{self._reset_calls})")
+        # print(f"Picking new FX pair: {tic} (episode #{self._reset_calls})")
         sub = self.full_df[self.full_df[self.tic_col] == tic].reset_index(drop=True)
         self.df = sub
         # recompute normalization
@@ -81,12 +89,12 @@ class ForexPriceTrailingEnv(gym.Env):
         self.agent_price = float(self.df.loc[self.ptr, "close"])
 
         pair = self.df[self.tic_col].iloc[0]
-        self.tb_run_name = f"episode_{self.episode_num}_{pair}"
+        self.tb_run_name = f"episode_{self.episode_num}_{pair}_{self.name}"
 
         return self._window_obs(self.ptr), {
             "forex_pair": self.df[self.tic_col].iloc[0] if self.df is not None else None
         }
-    
+
     def set_fixed_window(self, start_idx: int, length: int):
         self.start_idx = start_idx
         self.ptr = start_idx
@@ -120,37 +128,33 @@ class ForexPriceTrailingEnv(gym.Env):
         upper = close * (1 + self.M)
         lower = close * (1 - self.M)
 
-        WRITER.add_scalars(
-            f"Live Agent Performance", 
-            tag_scalar_dict={"upper": upper, "close": close, "lower": lower, "agent": self.agent_price}, 
-            global_step=self.total_steps
-        )
+        if self.writer:
+            self.writer.add_scalars(
+                f"Live Agent Performance - {self.name}",
+                tag_scalar_dict={
+                    "upper": upper,
+                    "close": close,
+                    "lower": lower,
+                    "agent": self.agent_price,
+                },
+                global_step=self.total_steps,
+            )
 
-        WRITER.add_scalars(
-            f"{self.tb_run_name}/live_performance", 
-            tag_scalar_dict={"upper": upper, "lower": lower, "agent": self.agent_price}, 
-            global_step=self.total_steps
-        )
+            # self.writer.add_scalars(
+            #     f"{self.tb_run_name}/live_performance",
+            #     tag_scalar_dict={
+            #         "upper": upper,
+            #         "lower": lower,
+            #         "agent": self.agent_price,
+            #     },
+            #     global_step=self.total_steps,
+            # )
 
         # pnl + fee
         ret = float(self.df.loc[self.ptr + 1, "x1"])
         r_pnl = self.position * ret
         self.cum_pnl += r_pnl
         r_fee = -self.fee * abs(self.position - prev_pos)
-
-        WRITER.add_scalar(
-            f"{self.tb_run_name}/cumulative_pnl",
-            self.cum_pnl,
-            global_step=self.total_steps
-        )
-
-        WRITER.add_scalar(
-            f"Live Cumulative PnL",
-            self.cum_pnl,
-            global_step=self.total_steps
-        )
-
-        self.total_steps += 1
 
         # move the “agent_price”
         if self.position == 1:
@@ -170,6 +174,30 @@ class ForexPriceTrailingEnv(gym.Env):
         done = False
         truncated = (self.ptr - self.start_idx) >= self.EP_LEN
 
+        if self.writer:
+            # self.writer.add_scalar(
+            #     f"{self.tb_run_name}/cumulative_pnl",
+            #     self.cum_pnl,
+            #     global_step=self.total_steps,
+            # )
+            # self.writer.add_scalar(
+            #     f"{self.tb_run_name}/trailing_reward",
+            #     r_trail,
+            #     global_step=self.total_steps,
+            # )
+            self.writer.add_scalar(
+                f"Live Cumulative PnL - {self.name}",
+                self.cum_pnl,
+                global_step=self.total_steps,
+            )
+            self.writer.add_scalar(
+                f"Live Trailing Reward - {self.name}",
+                r_trail,
+                global_step=self.total_steps,
+            )
+
+        self.total_steps += 1
+
         return (
             obs,
             r_total,
@@ -186,8 +214,3 @@ class ForexPriceTrailingEnv(gym.Env):
 
     def save_action_memory(self):
         return pd.DataFrame({"date": self._hist_dates, "action": self.actions_memory})
-
-    def get_sb_env(self):
-        e = DummyVecEnv([lambda: self])
-        obs, _ = e.reset()
-        return e, obs
